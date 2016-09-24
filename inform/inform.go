@@ -3,13 +3,11 @@ package inform
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 )
 
 const (
-	PROTOCOL_MAGIC int32 = 1414414933 // TNBU
+	PROTOCOL_MAGIC int32 = 1414414933 // UBNT
 	INFORM_VERSION int32 = 0
 	DATA_VERSION   int32 = 1
 
@@ -90,44 +88,4 @@ func (i *InformWrapper) SetCompressed(c bool) {
 	} else {
 		i.Flags &= COMPRESSED_FLAG
 	}
-}
-
-// Decode payload to a map and try to determine the inform type
-func (i *InformWrapper) decodePayload() (map[string]interface{}, string, error) {
-	var m map[string]interface{}
-
-	if err := json.Unmarshal(i.Payload, &m); err != nil {
-		return nil, "", err
-	}
-
-	t, ok := m["_type"]
-	if !ok {
-		return nil, "", errors.New("Message contains no type")
-	}
-
-	st, ok := t.(string)
-	if !ok {
-		return nil, "", errors.New("Message type is not a string")
-	}
-
-	return m, st, nil
-}
-
-// Decode payload JSON as a inform message
-func (i *InformWrapper) JsonMessage() (interface{}, error) {
-	msg, t, err := i.decodePayload()
-	if err != nil {
-		return nil, err
-	}
-
-	switch t {
-	case "noop":
-		var o NoopMessage
-		if err := mapstructure.Decode(msg, &o); err != nil {
-			return nil, err
-		}
-		return o, nil
-	}
-
-	return nil, errors.New(fmt.Sprintf("Message type %s is invalid", t))
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type Codec struct {
-	// KeyBag contains a mapping of comma-separated MAC addresses to their AES
+	// KeyBag contains a mapping of colon-separated MAC addresses to their AES
 	// keys
 	KeyBag map[string]string
 }
