@@ -1,8 +1,8 @@
 Ubiquiti Inform Protocol in Golang
 ==================================
-This repo contains a Golang implemntation of the Ubiquiti Networks Inform
+This repo contains a Golang implementation of the Ubiquiti Networks Inform
 protocol used by the Unifi access points and the mFi machine networking
-components. The primary focus is an implemenation compatible with mFi
+components. The primary focus is an implementation compatible with mFi
 components but the library should also be compatible with Unifi devices.
 
 This repo is a work in progress and is not yet considered stable. If you find
