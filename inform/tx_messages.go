@@ -25,8 +25,15 @@ type CommandMessage struct {
 	Voltage    int    `json:"volt,omitempty"`
 }
 
-func NewOutputCommand(port, val, timer int) *CommandMessage {
-	return &CommandMessage{
+// Freshen timestamps
+func (m *CommandMessage) Freshen() {
+	m.DateTime = time.Now().Format(time.RFC3339)
+	m.ServerTime = unixMicroPSTString()
+	m.Time = unixMicroPST()
+}
+
+func NewOutputCommand(port int, val bool, timer int) *CommandMessage {
+	m := &CommandMessage{
 		Type:       "cmd",
 		Command:    "mfi-output",
 		DateTime:   time.Now().Format(time.RFC3339),
@@ -34,8 +41,15 @@ func NewOutputCommand(port, val, timer int) *CommandMessage {
 		ServerTime: unixMicroPSTString(),
 		Time:       unixMicroPST(),
 		Timer:      timer,
-		Value:      val,
 	}
+
+	if val {
+		m.Value = 1
+	} else {
+		m.Value = 0
+	}
+
+	return m
 }
 
 type NoopMessage struct {

@@ -1,49 +1,55 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/mcrute/go-inform/inform"
-	"io/ioutil"
-	"os"
+	"github.com/brutella/hc"
+	"github.com/brutella/hc/accessory"
+
+	"log"
+	"time"
 )
 
 func main() {
-	fp, err := os.Open("data/test_files/1.bin")
-	if err != nil {
-		fmt.Println("Error loading file")
-		return
+	switchInfo := accessory.Info{
+		Name:         "Lamp",
+		SerialNumber: "051AC-23AAM1",
+		Manufacturer: "Foobar",
+		Model:        "AB",
 	}
-	defer fp.Close()
+	acc := accessory.NewSwitch(switchInfo)
 
-	kp, err := os.Open("data/device_keys.json")
+	config := hc.Config{Pin: "12344321", Port: "12345", StoragePath: "./db"}
+	t, err := hc.NewIPTransport(config, acc.Accessory)
+
 	if err != nil {
-		fmt.Println("Error loading key file")
-		return
-	}
-	defer kp.Close()
-
-	var keys map[string]string
-	kd, _ := ioutil.ReadAll(kp)
-	json.Unmarshal(kd, &keys)
-
-	codec := &inform.Codec{keys}
-
-	msg, err := codec.Unmarshal(fp)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+		log.Fatal(err)
 	}
 
-	fmt.Printf("%s", msg)
+	// Log to console when client (e.g. iOS app) changes the value of the on characteristic
+	acc.Switch.On.OnValueRemoteUpdate(func(on bool) {
+		if on == true {
+			log.Println("[INFO] Client changed switch to on")
+		} else {
+			log.Println("[INFO] Client changed switch to off")
+		}
+	})
 
-	out, _ := os.Create("test.out")
-	defer out.Close()
+	// Periodically toggle the switch's on characteristic
+	go func() {
+		for {
+			on := !acc.Switch.On.GetValue()
+			if on == true {
+				log.Println("[INFO] Switch is on")
+			} else {
+				log.Println("[INFO] Switch is off")
+			}
+			acc.Switch.On.SetValue(on)
+			time.Sleep(5 * time.Second)
+		}
+	}()
 
-	pkt, err := codec.Marshal(msg)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	out.Write(pkt)
+	hc.OnTermination(func() {
+		t.Stop()
+	})
+
+	t.Start()
 }

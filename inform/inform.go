@@ -27,12 +27,26 @@ type InformWrapper struct {
 
 // Create InformWrapper with sane defaults
 func NewInformWrapper() *InformWrapper {
-	return &InformWrapper{
+	w := &InformWrapper{
 		Version:     INFORM_VERSION,
 		MacAddr:     make([]byte, 6),
 		Flags:       0,
 		DataVersion: DATA_VERSION,
 	}
+
+	// Almost all messages are encrypted outside of provisioning so default
+	// this and make users explicitly disable it.
+	w.SetEncrypted(true)
+
+	return w
+}
+
+// Create an InformWrapper that is a response to an incoming wrapper. Copies
+// all necessary data for a response so callers can just set a payload
+func NewInformWrapperResponse(msg *InformWrapper) *InformWrapper {
+	w := NewInformWrapper()
+	copy(w.MacAddr, msg.MacAddr)
+	return w
 }
 
 // Update the payload data with JSON value
@@ -43,6 +57,19 @@ func (i *InformWrapper) UpdatePayload(v interface{}) error {
 		i.Payload = d
 		return nil
 	}
+}
+
+// Unmarshal a payload body that we received from a device. Does not work for
+// user-set messages
+func (i *InformWrapper) UnmarshalPayload() (*DeviceMessage, error) {
+	var m DeviceMessage
+
+	err := json.Unmarshal(i.Payload, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	return &m, nil
 }
 
 // Format Mac address bytes as lowercase string with colons
