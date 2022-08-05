@@ -11,8 +11,10 @@ const (
 	INFORM_VERSION int32 = 0
 	DATA_VERSION   int32 = 1
 
-	ENCRYPTED_FLAG  = 1
-	COMPRESSED_FLAG = 2
+	ENCRYPTED_FLAG         = 1
+	ZLIB_COMPRESSED_FLAG   = 2
+	SNAPPY_COMPRESSED_FLAG = 4
+	AES_GCM_FLAG           = 8
 )
 
 // Wrapper around an inform message, serializes directly into the wire
@@ -22,6 +24,7 @@ type InformWrapper struct {
 	MacAddr     []byte
 	Flags       int16
 	DataVersion int32
+	DataLength  int32
 	Payload     []byte
 }
 
@@ -86,7 +89,18 @@ func (i *InformWrapper) String() string {
 	fmt.Fprintf(b, "Mac Addr:     \t%s\n", i.FormattedMac())
 	fmt.Fprintf(b, "Flags:        \t%d\n", i.Flags)
 	fmt.Fprintf(b, " Encrypted:   \t%t\n", i.IsEncrypted())
-	fmt.Fprintf(b, " Compressed:  \t%t\n", i.IsCompressed())
+	fmt.Fprintf(b, " Compressed:  \t%t", i.IsCompressed())
+	if i.IsCompressed() {
+		if i.IsZlibCompressed() {
+			fmt.Fprintf(b, " (zlib)\n")
+		} else if i.IsSnappyCompressed() {
+			fmt.Fprintf(b, " (snappy)\n")
+		} else {
+			fmt.Fprintf(b, " (unknown)\n")
+		}
+	} else {
+		fmt.Fprintf(b, "\n")
+	}
 	fmt.Fprintf(b, "Data Version: \t%d\n", i.DataVersion)
 	fmt.Fprintf(b, "Payload:      \t%q\n", i.Payload)
 
@@ -105,14 +119,42 @@ func (i *InformWrapper) SetEncrypted(e bool) {
 	}
 }
 
-func (i *InformWrapper) IsCompressed() bool {
-	return i.Flags&COMPRESSED_FLAG != 0
+func (i *InformWrapper) IsGCMEncrypted() bool {
+	return i.Flags&AES_GCM_FLAG != 0
 }
 
-func (i *InformWrapper) SetCompressed(c bool) {
-	if c {
-		i.Flags |= COMPRESSED_FLAG
+func (i *InformWrapper) SetGCMEncrypted(e bool) {
+	if e {
+		i.Flags |= AES_GCM_FLAG
 	} else {
-		i.Flags &= COMPRESSED_FLAG
+		i.Flags &= AES_GCM_FLAG
+	}
+}
+
+func (i *InformWrapper) IsCompressed() bool {
+	return i.IsZlibCompressed() || i.IsSnappyCompressed()
+}
+
+func (i *InformWrapper) IsZlibCompressed() bool {
+	return i.Flags&ZLIB_COMPRESSED_FLAG != 0
+}
+
+func (i *InformWrapper) IsSnappyCompressed() bool {
+	return i.Flags&SNAPPY_COMPRESSED_FLAG != 0
+}
+
+func (i *InformWrapper) SetSnappyCompressed(c bool) {
+	if c {
+		i.Flags |= SNAPPY_COMPRESSED_FLAG
+	} else {
+		i.Flags &= SNAPPY_COMPRESSED_FLAG
+	}
+}
+
+func (i *InformWrapper) SetZlibCompressed(c bool) {
+	if c {
+		i.Flags |= ZLIB_COMPRESSED_FLAG
+	} else {
+		i.Flags &= ZLIB_COMPRESSED_FLAG
 	}
 }

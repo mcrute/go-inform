@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+
+	"github.com/golang/snappy"
 )
 
 type Codec struct {
@@ -33,6 +35,7 @@ func (c *Codec) Unmarshal(fp io.Reader) (*InformWrapper, error) {
 
 	var dataLen int32
 	binary.Read(fp, binary.BigEndian, &dataLen)
+	w.DataLength = dataLen
 
 	p := make([]byte, dataLen)
 	io.ReadFull(fp, p)
@@ -42,12 +45,21 @@ func (c *Codec) Unmarshal(fp io.Reader) (*InformWrapper, error) {
 		return nil, errors.New("No key found")
 	}
 
-	u, err := Decrypt(p, iv, key)
+	u, err := Decrypt(p, iv, key, w)
 	if err != nil {
 		return nil, err
 	}
 
-	w.Payload = u
+	if w.IsSnappyCompressed() {
+		w.Payload, err = snappy.Decode(nil, u)
+		if err != nil {
+			return nil, err
+		}
+	} else if w.IsZlibCompressed() {
+		return nil, errors.New("payload is zlib compressed, not supported")
+	} else {
+		w.Payload = u
+	}
 
 	return w, nil
 }
