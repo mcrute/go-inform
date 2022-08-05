@@ -10,13 +10,13 @@ import (
 	"errors"
 )
 
-func Pad(src []byte, blockSize int) []byte {
+func pad(src []byte, blockSize int) []byte {
 	padLen := blockSize - (len(src) % blockSize)
 	padText := bytes.Repeat([]byte{byte(padLen)}, padLen)
 	return append(src, padText...)
 }
 
-func Unpad(src []byte, blockSize int) ([]byte, error) {
+func unpad(src []byte, blockSize int) ([]byte, error) {
 	srcLen := len(src)
 	paddingLen := int(src[srcLen-1])
 	if paddingLen >= srcLen || paddingLen > blockSize {
@@ -51,7 +51,7 @@ func makeAESIV() ([]byte, error) {
 func Encrypt(payload []byte, key string) ([]byte, []byte, error) {
 	ct := make([]byte, len(payload))
 	copy(ct, payload)
-	ct = Pad(ct, aes.BlockSize)
+	ct = pad(ct, aes.BlockSize)
 
 	iv, err := makeAESIV()
 	if err != nil {
@@ -127,7 +127,7 @@ func decryptCBC(payload, iv []byte, key string) ([]byte, error) {
 	mode := cipher.NewCBCDecrypter(block, iv)
 	mode.CryptBlocks(b, payload)
 
-	u, err := Unpad(b, aes.BlockSize)
+	u, err := unpad(b, aes.BlockSize)
 	if err != nil {
 		return nil, err
 	}
