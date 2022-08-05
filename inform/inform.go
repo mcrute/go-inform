@@ -62,19 +62,6 @@ func (i *InformWrapper) UpdatePayload(v interface{}) error {
 	}
 }
 
-// Unmarshal a payload body that we received from a device. Does not work for
-// user-set messages
-func (i *InformWrapper) UnmarshalPayload() (*DeviceMessage, error) {
-	var m DeviceMessage
-
-	err := json.Unmarshal(i.Payload, &m)
-	if err != nil {
-		return nil, err
-	}
-
-	return &m, nil
-}
-
 // Format Mac address bytes as lowercase string with colons
 func (i *InformWrapper) FormattedMac() string {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
