@@ -2,6 +2,7 @@ package inform
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -56,7 +57,18 @@ func (c *Codec) Unmarshal(fp io.Reader) (*InformWrapper, error) {
 			return nil, err
 		}
 	} else if w.IsZlibCompressed() {
-		return nil, errors.New("payload is zlib compressed, not supported")
+		rb := bytes.NewReader(u)
+		wb := &bytes.Buffer{}
+
+		r, err := zlib.NewReader(rb)
+		if err != nil {
+			return nil, err
+		}
+
+		io.Copy(wb, r)
+		r.Close()
+
+		w.Payload = wb.Bytes()
 	} else {
 		w.Payload = u
 	}
