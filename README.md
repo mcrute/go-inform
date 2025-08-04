@@ -12,9 +12,11 @@ This work is largely based on
 [ubntmfi](https://github.com/mcrute/ubntmfi/blob/master/inform_protocol.md)
 
 ## Status
-This repo is a work in progress and semi-maintained, it is not yet
-considered stable. If you find it useful patches are welcome, just open
-a pull request.
+This repo is a work in stasis and is semi-maintained, it is not yet
+considered stable. Though the repository is archived, if there is ever
+interest in this project I will un-archive it and find time to more
+actively maintain it. If you find it useful patches are welcome, just
+open a pull request.
 
 This repository should work well with older mFi components and modern
 Unifi components as well. The author has tested with devices as new as
